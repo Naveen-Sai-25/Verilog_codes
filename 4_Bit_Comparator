@@ -1,0 +1,47 @@
+// 4-bit Comparator Design
+parameter N = 4;   // Set bit-width to 4
+
+module comparator(a, b, lt, eq, gt);
+  input  [(N-1):0] a, b;   // 4-bit inputs
+  output reg lt, eq, gt;   // Outputs: less than, equal, greater than
+
+  // Always block triggers whenever a or b changes
+  always @(a, b)
+    begin
+      // Initialize outputs
+      lt = 0;
+      eq = 0;
+      gt = 0;
+
+      // Comparison logic
+      lt = (a < b);   // lt = 1 if a < b
+      eq = (a == b);  // eq = 1 if a == b
+      gt = (a > b);   // gt = 1 if a > b
+    end
+endmodule
+// Test Bench Code For verification of 4 bit comparator
+// Testbench for 4-bit comparator
+//parameter N=4;   // Bit-width (must match comparator module)
+
+module tb();
+  reg [(N-1):0] a, b;   // 4-bit input registers
+  wire lt, eq, gt;      // Outputs: less than, equal, greater than
+
+  // Instantiate comparator (Device Under Test)
+  comparator DUT(a, b, lt, eq, gt);
+
+  // Apply all possible input combinations
+  initial 
+    begin
+      // Loop through all values of a and b (2^(2N) combinations)
+      for (integer i = 0; i < 2**(2*N); i++) 
+        begin
+          {a, b} = i;   // Assign values to a and b
+          #5;           // Wait 5 time units
+        end
+    end
+
+  // Display results whenever inputs/outputs change
+  initial
+    $monitor("a=%d, b=%d, lt=%d, eq=%d, gt=%d", a, b, lt, eq, gt);
+endmodule
