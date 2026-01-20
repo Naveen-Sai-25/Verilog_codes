@@ -1,0 +1,47 @@
+// Gray code converter (4-bit)
+module gray(in, out);
+  // 4-bit binary input
+  input [3:0] in;
+  // 4-bit Gray code output
+  output [3:0] out;
+
+  // MSB of Gray code is same as MSB of binary
+  assign out[3] = in[3];
+
+  // Generate block for remaining bits
+  genvar i;
+  generate
+    // Loop from bit 0 to 2
+    for (i = 0; i < 3; i = i + 1) begin : bcd_grey
+      // Each Gray bit = XOR of current binary bit and next higher binary bit
+      xor x1(out[i], in[i], in[i+1]);
+    end
+  endgenerate
+endmodule
+// test bench code for the verification of design code
+// Testbench for Gray code converter
+module tb();
+
+  // 4-bit input register
+  reg [3:0] in;
+  // 4-bit output wire
+  wire [3:0] out;
+
+  // Instantiate the Gray code module
+  gray DUT(in, out);
+
+  // Apply test values to input
+  initial begin
+    // Loop through values 0 to 9
+    for (integer i = 0; i < 10; i++) begin
+      in = i;   // assign input
+      #5;       // wait 5 time units
+    end
+  end
+
+  // Display input and output values
+  initial begin
+    $monitor("BCD = %b   Gray = %b", in, out);
+  end
+
+endmodule
