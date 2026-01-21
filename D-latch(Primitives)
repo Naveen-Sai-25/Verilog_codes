@@ -1,0 +1,44 @@
+// Define a primitive for D latch with reset
+primitive dlatch(qn, d, ctrl, rst);
+  input d, ctrl, rst;     // d = data input, ctrl = control/enable, rst = reset
+  output reg qn;          // qn = output
+
+  // Truth table for the latch
+  // d  ctrl rst  q : Qn
+     ?   ?    1 : ? : 0;  // If reset = 1, output is 0
+     ?   0    0 : ? : 0;  // If ctrl = 0 and q was 0, output stays 0
+     ?   0    0 : 1 : 1;  // If ctrl = 0 and q was 1, output stays 1
+     0   1    0 : ? : 0;  // If ctrl = 1 and d = 0, output becomes 0
+     1   1    0 : ? : 1;  // If ctrl = 1 and d = 1, output becomes 1
+endtable
+endprimitive
+
+// Module for the D latch
+module d_latch(d, ctrl, rst, qn);
+  input d, ctrl, rst;     // Inputs
+  output qn;              // Output
+  dlatch l1(qn, d, ctrl, rst); // Instantiate the primitive
+endmodule
+// Test bench code for the Verification Of Design Code
+// Testbench for D Latch
+module tb();
+  reg d, ctrl, rst;   // Inputs: data, control(enable), reset
+  wire qn;            // Output from DUT
+
+  // Instantiate the D latch module (Device Under Test)
+  d_latch DUT(d, ctrl, rst, qn);
+
+  integer i;          // Loop variable
+
+  // Apply different input combinations
+  initial begin
+    for(i = 0; i < 8; i = i + 1) begin
+      {d, ctrl, rst} = i; // Assign binary values to inputs
+      #5;                 // Wait 5 time units
+    end
+  end
+
+  // Monitor signals and print whenever they change
+  initial
+    $monitor("d=%b, ctrl=%b, rst=%b, qn=%b", d, ctrl, rst, qn);
+endmodule
