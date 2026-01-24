@@ -1,0 +1,39 @@
+// Function to calculate parity of an 8-bit input
+function parity;
+    input [7:0] data_in;       // Declare 8-bit input to the function
+    begin
+      parity = ^data_in;       // XOR reduction operator: computes parity (1 if odd number of 1s, else 0)
+    end
+endfunction
+
+// Module to check parity of an 8-bit input
+module parity_check(data, out);
+  input [7:0] data;            // 8-bit input data
+  output reg out;              // Output register to hold parity result
+
+  // Always block triggered whenever 'data' changes
+  always @(data)
+    begin
+      out = parity(data);      // Call parity function and assign result to output
+    end
+endmodule
+// Test bench code for Verification Of Design
+// Testbench for parity_check module
+module tb();
+  reg [7:0] data;              // Testbench input stimulus (8-bit data)
+  wire out;                    // Output from DUT (driven by module, so use wire)
+
+  // Instantiate the Device Under Test (DUT)
+  parity_check DUT(data, out);
+
+  // Initial block to apply test vectors
+  initial
+    begin
+      data = 8'b10110111;      // Apply first test vector
+      #5 data = 8'b11011100;   // After 5 time units, apply second test vector
+    end
+
+  // Monitor block to continuously display values of data and out
+  initial
+    $monitor("time=%0t data=%b out=%b", $time, data, out);
+endmodule
