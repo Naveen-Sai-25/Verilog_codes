@@ -1,0 +1,50 @@
+// Set parameter N = 4 (number of bits in the shift register)
+parameter N=4;
+// Define the module 'sipo' (Serial-In Parallel-Out shift register)
+module sipo(clk, rst, sin, q);
+  // Inputs: clock, reset, and serial input
+  input clk, rst, sin;
+  // Output: parallel output of N bits
+  output reg [(N-1):0] q;
+  // Always block triggered on rising edge of clock or reset
+  always@(posedge clk or posedge rst)
+    begin
+      if(rst)
+        // Clear the register when reset is active
+        q <= 0;
+      else
+        // Shift right and load new input bit at MSB
+        q <= {sin, q[(N-1):1]};
+    end
+endmodule
+// The Test bench code For the Verification of design
+// Testbench for the SIPO (Serial-In Parallel-Out) shift register
+module tb();
+  // Declare input signals as registers
+  reg clk, rst, sin;
+  // Declare output signal as wire (since DUT drives it)
+  wire [(N-1):0] q;
+  // Instantiate the DUT (Device Under Test)
+  sipo DUT(clk, rst, sin, q);
+  // Generate clock: toggles every 5 time units
+  always #5 clk = ~clk;
+  // Initial block for stimulus
+  initial
+    begin
+      // Create waveform dump file for simulation
+      $dumpfile("dump.vcd");
+      $dumpvars(1);
+      // Apply reset at start
+      clk = 0; rst = 1; #10 rst = 0;
+      // Apply serial input values one by one
+      sin = 1; #10;
+      sin = 0; #10;
+      sin = 1; #10;
+      sin = 0; #10;
+      // Wait some time before ending simulation
+      #40 $finish;
+    end
+  // Monitor values of signals during simulation
+  initial
+    $monitor("clk=%b rst=%b sin=%b q=%b", clk, rst, sin, q);
+endmodule
