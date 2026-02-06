@@ -1,0 +1,116 @@
+// Design Code For Task
+// Full Adder Module
+module fa(a, b, cin, sum, carry);
+  input [3:0] a, b;       // 4-bit inputs
+  input cin;              // Carry-in
+  output [3:0] sum;       // 4-bit sum output
+  output carry;           // Carry-out
+  // Perform addition of a, b, and cin. 
+  // Concatenation ensures carry is the MSB of the result.
+  assign {carry, sum} = a + b + cin;
+endmodule
+
+// Add/Subtract Module
+module add_sub(mode, in1, in2, s_out, c_out);
+  input mode;             // Mode: 0 = addition, 1 = subtraction
+  input [3:0] in1, in2;   // 4-bit inputs
+  output [3:0] s_out;     // 4-bit sum/difference output
+  output c_out;           // Carry-out
+  wire [3:0] xor_out;     // XORed version of in2 for subtraction
+
+  // XOR each bit of in2 with mode.
+  // If mode = 0 → in2 unchanged (addition).
+  // If mode = 1 → in2 inverted (two’s complement subtraction).
+  assign xor_out[0] = in2[0] ^ mode;
+  assign xor_out[1] = in2[1] ^ mode;
+  assign xor_out[2] = in2[2] ^ mode;
+  assign xor_out[3] = in2[3] ^ mode;
+
+  // Use full adder to add in1 and modified in2.
+  // Carry-in is mode (needed for two’s complement subtraction).
+  fa x1(in1, xor_out, mode, s_out, c_out);
+endmodule
+
+// Parallel-In Parallel-Out (PIPO) Register
+module pipo(clk, rst, ena, in, q);
+  input clk, rst, ena;    // Clock, reset, and enable signals
+  input [3:0] in;         // 4-bit input data
+  output reg [3:0] q;     // 4-bit stored output
+
+  // On rising edge of clock or reset:
+  always @(posedge clk or posedge rst) begin
+    if (rst)
+      q <= 0;             // Reset clears register
+    else if (ena)
+      q <= in;            // Load input into register if enabled
+    else
+      q <= q;             // Hold previous value if not enabled
+  end
+endmodule
+
+// Arithmetic Logic Unit (ALU)
+module ALU(clk, rst, mode, ena, in, sum, c_out);
+  input clk, rst, mode, ena; // Control signals
+  input [3:0] in;            // 4-bit input
+  output [3:0] sum;          // 4-bit ALU output
+  output c_out;              // Carry-out
+  wire [3:0] reg_out;        // Register output
+  wire [3:0] alu_out;        // ALU computation result
+
+  // Perform addition/subtraction using add_sub module
+  add_sub x1(reg_out, in, mode, alu_out, c_out);
+
+  // Store ALU result into register (feedback loop)
+  pipo p1(clk, rst, ena, alu_out, reg_out);
+
+  // Output is the register value
+  assign sum = reg_out;
+endmodule
+// The test Bench code for the verification of the design
+// Testbench for ALU
+module tb();
+  reg clk, rst, mode, ena;     // Control signals
+  reg [3:0] in;                // 4-bit input
+  wire [3:0] sum;              // ALU output
+  wire c_out;                  // Carry-out
+
+  // Instantiate ALU (Device Under Test)
+  ALU DUT(clk, rst, mode, ena, in, sum, c_out);
+
+  // Clock generation: toggles every 5 time units
+  always #5 clk = ~clk;
+
+  initial begin
+    // Initial values
+    clk = 0; rst = 1; mode = 0; ena = 0; in = 4'b0000;
+
+    // Reset the ALU
+    #10 rst = 0; ena = 1; mode = 0; in = 4'b0101; // Add 5
+    #10 rst = 0; ena = 1; mode = 0; in = 4'b0111; // Add 7
+
+    // Test subtraction
+    #10 mode = 1; in = 4'b0011; // Subtract 3
+    #10 mode = 1; in = 4'b0001; // Subtract 1
+
+    // Test addition with carry
+    #10 mode = 0; in = 4'b1111; // Add 15 (check carry-out)
+
+    // Test subtraction resulting in negative (wrap-around in 4-bit)
+    #10 mode = 1; in = 4'b1000; // Subtract 8
+
+    // Test with enable = 0 (output should hold previous value)
+    #10 ena = 0; in = 4'b0100;  // Input ignored, sum should remain same
+
+    // Re-enable and add again
+    #10 ena = 1; mode = 0; in = 4'b0010; // Add 2
+
+    // Finish simulation
+    #30 $finish;
+  end
+
+  // Monitor outputs at every change
+  initial begin
+    $monitor("t=%0t | mode=%b rst=%b ena=%b in=%b sum=%b c_out=%b",
+              $time, mode, rst, ena, in, sum, c_out);
+  end
+endmodule
